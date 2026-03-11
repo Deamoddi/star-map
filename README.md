@@ -1,153 +1,279 @@
-# Starlink Location & Status Client
+# 🛰️ StarMap - Starlink GPS → MAVLink Bridge
 
-A .NET 10 console application for retrieving Starlink device location data via gRPC.
+**by Maestro**
 
-## 🚀 Quick Start
+Утиліта для отримання GPS координат зі Starlink та відправки їх в ArduPilot через MAVLink.
+
+---
+
+## 🚀 Швидкий старт
 
 ```bash
-# 1. Check Starlink connection
+# 1. Перевір підключення до Starlink
 ping 192.168.100.1
 
-# 2. Run the application
+# 2. Запусти програму
 dotnet run
+
+# АБО білд релізу
+.\build-release.bat
+cd Release
+.\StarMap.exe
 ```
 
-See [QUICKSTART.md](QUICKSTART.md) for detailed quick start guide.
+---
 
-## 📖 Documentation
+## ✨ Можливості
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 3 minutes
-- **[STATUS.md](STATUS.md)** - What works and what doesn't (with real test results)
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Project architecture and design
-- **[EXAMPLES.md](EXAMPLES.md)** - Code examples and use cases
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Troubleshooting guide
-- **[CHANGES.md](CHANGES.md)** - Project changes and refactoring history
+- ✅ **gRPC зв'язок** зі Starlink
+- ✅ **GPS координати** (широта, довгота, висота)
+- ✅ **MAVLink протокол** для ArduPilot
+- ✅ **NMEA вивід** через UART (опціонально)
+- ✅ **Конфігурація через INI** файл
+- ✅ **Geoid correction** для точної висоти
+- ✅ **Single-file EXE** без залежностей
+- ✅ **Українська локалізація** з підтримкою емодзі
 
-## Features
+---
 
-- ✅ **gRPC communication** with Starlink device
-- ✅ **Configuration via INI file**
-- ✅ **GPS coordinates** (latitude, longitude, altitude)
-- ✅ **Position accuracy and speed data**
-- ✅ **Position source information**
-- ✅ **Object-oriented architecture** with clean separation of concerns
-
-**Note:** Most consumer Starlink terminals do NOT support `DishGetStatus` (azimuth/elevation) via gRPC API. This functionality may only be available on enterprise/maritime terminals or through the web interface.
-
-## Architecture
-
-The project follows OOP principles with clear separation of responsibilities:
+## 📁 Структура проекту
 
 ```
 star-map/
-├── Models/                      # Data models
-│   ├── LocationData.cs         # GPS location data
-│   ├── DishStatus.cs           # Dish status and orientation
-│   └── StarlinkData.cs         # Combined data model
-├── Services/                    # Business logic
-│   └── StarlinkService.cs      # gRPC communication service
-├── Configuration/               # Configuration management
-│   ├── AppConfiguration.cs     # Configuration model
-│   └── ConfigurationService.cs # INI file reader
-├── Display/                     # Presentation layer
-│   └── ConsoleDisplay.cs       # Console output formatting
-├── Protos/                      # Protocol Buffers
-│   └── starlink.proto          # gRPC service definition
-├── Application.cs               # Main application coordinator
-├── Program.cs                   # Entry point
-└── appsettings.ini             # Configuration file
+├── 📁 Configuration/            # Конфігурація
+│   ├── AppConfiguration.cs     # Модель налаштувань
+│   └── ConfigurationService.cs # Читання INI
+├── 📁 Display/                  # Відображення
+│   └── ConsoleDisplay.cs       # Консольний вивід
+├── 📁 Models/                   # Моделі даних
+│   ├── LocationData.cs         # GPS дані
+│   ├── DishStatus.cs           # Статус тарілки
+│   └── StarlinkData.cs         # Загальні дані
+├── 📁 Services/                 # Сервіси
+│   ├── StarlinkService.cs      # gRPC зв'язок
+│   ├── MavlinkService.cs       # MAVLink протокол
+│   └── UartService.cs          # NMEA вивід
+├── 📁 Protos/                   # Protocol Buffers
+│   └── starlink.proto          # gRPC схема
+├── 📁 Release/                  # ⭐ Готовий EXE
+│   ├── StarMap.exe             # Виконуваний файл (15.26 MB)
+│   └── appsettings.ini         # Конфіг
+├── 📄 Application.cs            # Головна логіка
+├── 📄 Program.cs                # Entry point
+├── 📄 appsettings.ini           # Конфігурація
+├── 📄 app.manifest              # Windows маніфест
+├── 📄 icon.ico                  # Іконка програми
+├── 📄 star-map.csproj           # Проект файл
+├── 🔨 build-release.bat         # Білд для Windows
+├── 🔨 build-release.sh          # Білд для Linux
+└── 📖 RELEASE.md                # Документація користувача
 ```
 
-## Configuration
+---
 
-Edit `appsettings.ini` to configure the gRPC endpoint:
+## ⚙️ Конфігурація (appsettings.ini)
 
 ```ini
 [Starlink]
-GrpcEndpoint=192.168.100.1:9200
+GrpcEndpoint=192.168.100.1:9200    # IP адреса Starlink
+
+[UART]
+Enabled=false                       # Увімкнути NMEA через UART
+Port=COM29                          # COM порт
+BaudRate=115200                     # Швидкість передачі
+
+[MAVLink]
+Enabled=true                        # Увімкнути MAVLink
+SystemId=1                          # System ID (має збігатися з автопілотом)
+
+[Polling]
+UpdateIntervalMs=200                # Інтервал оновлення (мс)
 ```
 
-The default endpoint is `192.168.100.1:9200` if not configured.
+---
 
-## Usage
+## 🔧 Налаштування ArduPilot
 
-1. Build the project:
-   ```bash
-   dotnet build
-   ```
+В **Mission Planner** встановіть параметри:
 
-2. Run the application:
-   ```bash
-   dotnet run
-   ```
+```
+GPS_TYPE = 14           (MAVLink)
+SERIAL3_PROTOCOL = 2    (MAVLink 2)
+SERIAL3_BAUD = 115      (115200 baud)
+```
 
-## Output Example
+Опціонально (для використання як основного джерела позиції):
+```
+EK3_SRC1_POSXY = 6      (ExternalNav)
+EK3_SRC1_POSZ = 6       (ExternalNav)
+```
+
+---
+
+## 💻 Розробка
+
+### Вимоги
+- .NET 10 SDK
+- Visual Studio 2026 або VS Code
+- Starlink підключений до мережі
+
+### Білд проекту
+```bash
+# Звичайний білд
+dotnet build
+
+# Release білд (single-file EXE)
+.\build-release.bat
+
+# Для Linux
+chmod +x build-release.sh
+./build-release.sh
+```
+
+### Запуск з коду
+```bash
+dotnet run
+```
+
+---
+
+## 📡 Технічні деталі
+
+### MAVLink
+- **Protocol:** MAVLink 2.0
+- **Message ID:** 232 (GPS_INPUT)
+- **Component ID:** 220 (MAV_COMP_ID_GPS)
+- **System ID:** Конфігурується (за замовчуванням 1)
+- **Частота оновлення:** 5 Hz (200ms)
+
+### GPS дані
+- **Формат:** WGS84 (Starlink) → AMSL (ArduPilot)
+- **Geoid correction:** -27m для України
+- **Точність:** ~0.37m горизонтальна
+- **Підтримка:** Lat, Lon, Alt, HDOP, VDOP, швидкість
+
+### gRPC
+- **Endpoint:** 192.168.100.1:9200
+- **Protocol:** HTTP/2
+- **Messages:** GetLocation, DishGetStatus (обмежено)
+
+---
+
+## 🐛 Вирішення проблем
+
+### "Не вдалось законектитись зі старом"
+1. Перевірте чи Starlink увімкнутий
+2. Перевірте IP адресу: `ping 192.168.100.1`
+3. Перевірте `appsettings.ini`
+
+### "Failed to open MAVLink"
+1. Перевірте номер COM порту в Device Manager
+2. Закрийте Mission Planner перед запуском
+3. Переконайтеся що автопілот підключений
+
+### Неправильна висота в Mission Planner
+- Висота корегується geoid offset (-27m для України)
+- Перевірте `AMSL` vs `WGS84` в ArduPilot
+- Можна змінити offset в коді `MavlinkService.cs`
+
+---
+
+## 📊 Вивід програми
 
 ```
 ╔════════════════════════════════════════╗
-║   Starlink Location & Status Client   ║
+║           StarMap by Maestro           ║
 ╚════════════════════════════════════════╝
 
-📡 Configuration
-   Endpoint: 192.168.100.1:9200
+📡 Конфігурація
+   Starlink gRPC IP: 192.168.100.1:9200
 
-⚙️  Connecting to Starlink device...
-✅ Connected successfully!
+📋 Конфігурація:
+   UART увімкнуто: False
+   MAVLink увімкнуто: True
+   MAVLink System ID: 1
+   UART порт: COM29
+   UART швидкість: 115200
+   Час оновлення: 200мс
+
+⚙️  Підлючення до тарілки...
+✅ Конект пройшов!
 
 ╔════════════════════════════════════════╗
-║         📍 LOCATION DATA               ║
+║       📍 GPS дані з тарілки            ║
 ╚════════════════════════════════════════╝
 
-🌍 Coordinates:
-   Latitude:        48.503210°
-   Longitude:       35.954956°
-   Altitude:        125.50 m
+🌍 Координати:
+   Широта:        48.502853°
+   Довгота:       35.956163°
+   Висота:        94.1 m
+   MGRS:          36U YU 18353 76413
 
-📊 Position Information:
-   Source:          Starlink
-   Accuracy:        5.25 m
-   Horizontal Speed: 0.00 m/s
-   Vertical Speed:  0.00 m/s
+📊 Інформація про позиціонування:
+   Джерело:       Starlink
+   Точність:      0.37 м
+   Горизонтальна швидкість: 0.00 м/с
+   Вертикальна швидкість:   0.00 м/с
 
-🔗 Connected to: 192.168.100.1:9200
+🔗 Підключено до: 192.168.100.1:9200
 
-Press any key to exit...
+✅ 🔄 Починаємо відправку кожних 200мс (MAVLink)
+
+Натисни будь-яку клавішу для зупинки...
+
+[17:23:06] #0009 | Широта: 48.502835 Довгота: 35.956151 Висота: 94.9м | MGRS: 36U YU 18352 76411
 ```
 
-## Key Components
+---
 
-### Models
-- **LocationData**: GPS coordinates, speed, and accuracy
-- **StarlinkData**: Complete device data
+## 🏗️ Архітектура
 
-### Services
-- **StarlinkService**: Handles gRPC communication
-  - `GetLocationAsync()`: Retrieves location data
-  - `GetDishStatusAsync()`: ⚠️ Not supported on consumer terminals
-  - `GetCompleteDataAsync()`: Retrieves location data
+### Патерни
+- **OOP** - об'єктно-орієнтований підхід
+- **Service pattern** - розділення логіки на сервіси
+- **Configuration** - INI-based конфігурація
+- **Display** - окремий шар для виводу
 
-### Configuration
-- **ConfigurationService**: Loads settings from INI file
-- **AppConfiguration**: Configuration model
+### Потік даних
+```
+Starlink (gRPC) → StarlinkService → LocationData → MavlinkService → ArduPilot
+                                                  ↓
+                                            ConsoleDisplay
+```
 
-### Display
-- **ConsoleDisplay**: Formatted console output with visual elements
+---
 
-### Application Flow
-1. Load configuration
-2. Create gRPC service
-3. Retrieve location data
-4. Display formatted results
+## 📦 Release білд
 
-## Important Limitations
+**Що включено:**
+- Single-file EXE (всі залежності включені)
+- Self-contained (.NET Runtime не потрібен)
+- Trimmed (оптимізовано розмір)
+- Compressed (стиснення)
+- No debug symbols (без .pdb файлів)
 
-⚠️ **DishGetStatus API Limitation**
+**Розмір:** ~15.26 MB
 
-Based on real-world testing, the `DishGetStatus` gRPC method (which provides azimuth, elevation, and device info) returns "Unimplemented" on consumer Starlink terminals. This appears to be a limitation of the consumer firmware.
+---
 
-**What works:**
-- ✅ `GetLocation` - GPS coordinates, accuracy, speed
+## 📄 Ліцензія
 
+© 2025 Maestro. All rights reserved.
+
+---
+
+## 🔗 Корисні посилання
+
+- [MAVLink Protocol](https://mavlink.io/)
+- [ArduPilot Documentation](https://ardupilot.org/)
+- [Starlink gRPC API](https://github.com/sparky8512/starlink-grpc-tools)
+
+---
+
+**Версія:** 1.0.0  
+**Дата:** 2025-01-14  
+**Автор:** Maestro  
+**GitHub:** https://github.com/Deamoddi/star-map
 **What doesn't work on consumer terminals:**
 - ❌ `DishGetStatus` - Azimuth, elevation, device info
 - ❌ Device hardware/software version
