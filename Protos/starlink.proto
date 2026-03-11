@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package SpaceX.API.Device;
+
+option csharp_namespace = "SpaceX.API.Device";
+
+// Status message
+message Status {
+  int32 code = 1;
+  string message = 2;
+}
+
+// Position types
+message LLAPosition {
+  double lat = 1;
+  double lon = 2;
+  double alt = 3;
+}
+
+message ECEFPosition {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// Position source enum
+enum PositionSource {
+  AUTO = 0;
+  NONE = 1;
+  UT_INFO = 2;
+  EXTERNAL = 3;
+  GPS = 4;
+  STARLINK = 5;
+  GNC_FUSED = 6;
+  GNC_BAD_SAT = 7;
+  GNC_GPS = 8;
+  GNC_PNT = 9;
+  GNC_STATIC = 10;
+}
+
+// Alignment stats for azimuth and elevation
+message AlignmentStats {
+  double boresight_azimuth_deg = 4;
+  double boresight_elevation_deg = 5;
+  double desired_boresight_azimuth_deg = 8;
+  double desired_boresight_elevation_deg = 9;
+}
+
+// Device state
+message DeviceState {
+  uint64 uptime_s = 1;
+}
+
+// Device info
+message DeviceInfo {
+  string id = 1;
+  string hardware_version = 2;
+  string software_version = 3;
+}
+
+// Dish status request and response
+message DishGetStatusRequest {
+}
+
+message DishGetStatusResponse {
+  DeviceInfo device_info = 1;
+  DeviceState device_state = 2;
+  double boresight_azimuth_deg = 1011;
+  double boresight_elevation_deg = 1012;
+  AlignmentStats alignment_stats = 1027;
+}
+
+// Request and Response messages
+message GetLocationRequest {
+  PositionSource source = 1;
+}
+
+message GetLocationResponse {
+  LLAPosition lla = 1;
+  double sigma_m = 4;
+  PositionSource source = 3;
+  double horizontal_speed_mps = 5;
+  double vertical_speed_mps = 6;
+}
+
+message Request {
+  uint64 id = 1;
+  uint64 epoch_id = 3;
+  string target_id = 2;
+
+  oneof request {
+    GetLocationRequest get_location = 1017;
+    DishGetStatusRequest dish_get_status = 2004;
+  }
+}
+
+message Response {
+  uint64 id = 1;
+  Status status = 2;
+  uint64 api_version = 3;
+
+  oneof response {
+    GetLocationResponse get_location = 1017;
+    DishGetStatusResponse dish_get_status = 2004;
+  }
+}
+
+message ToDevice {
+  Request request = 1;
+}
+
+message FromDevice {
+  Response response = 2;
+}
+
+// Device service
+service Device {
+  rpc Handle(Request) returns (Response);
+  rpc Stream(stream ToDevice) returns (stream FromDevice);
+}
